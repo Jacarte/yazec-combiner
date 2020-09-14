@@ -107,6 +107,7 @@ try:
                 for s in [f for f in os.listdir("sha256")[:MAX] if f.endswith(".bc") ]:
                     if COUNTER > MX:
                         DICT[COUNTER] = [bl, eq, m, s]
+                        print(f"{COUNTER} - {bl}, {eq}, {m}, {s}")
                         job = pool.submit(compile,f"{COUNTER}", bl, eq, m, s, "out")
                         futures.append(job)
                         COUNTER += 1
