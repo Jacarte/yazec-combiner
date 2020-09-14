@@ -17,6 +17,8 @@ MODULES = ['blake2b', 'equihash', 'main', 'sha256']
 check(["bash", "clean.sh"])
 
 def compile(name, blake, equihash, main, sha256, out):
+    if not os.path.exists(out):
+        os.mkdir(out)
     tmp_folder = "tmp-%s"%uuid.uuid4().__str__()
     try:
         sys.stderr.write(f"{name}, {blake}, {equihash}, {main}, {sha256}\n")
@@ -37,12 +39,12 @@ def compile(name, blake, equihash, main, sha256, out):
 
         # copy the wasm
         shutil.copy("%s/jazecminer.wasm"%tmp_folder, f"{out}/{name}-jazecminer.wasm")
-        shutil.rmtree(tmp_folder)
+        #shutil.rmtree(tmp_folder)
     except Exception as e:
         print(f"Error {e} {name},{blake}, {equihash}, {sha256}")
     finally:
         try:
-            shutil.rmtree(tmp_folder)
+            # shutil.rmtree(tmp_folder)
         except:
             pass
 
@@ -54,18 +56,34 @@ COUNTER_EQUI = 1
 COUNTER = 1
 
 
+'''
 
-'''for bl in os.listdir("blake2b")[:MAX]:
+for bl in [f for f in os.listdir("blake2b")[:MAX] if f.endswith(".bc")]:
     job = pool.submit(compile,f"{COUNTER_BLAKE}-1", bl, "equihash.bc", "main.bc", "sha256.bc", "only-blake")
     COUNTER_BLAKE += 1
     futures.append(job)
 
 wait(futures, return_when=ALL_COMPLETED)
 
-for eq in os.listdir("equihash")[:MAX]:
+for eq in [f for f in os.listdir("equihash")[:MAX] if f.endswith(".bc")]:
     job = pool.submit(compile,f"{COUNTER_EQUI}-2", "blake2b.bc", eq, "main.bc", "sha256.bc", "only-equihash")
     COUNTER_EQUI += 1
     futures.append(job)
+
+wait(futures, return_when=ALL_COMPLETED)
+
+for bl in [f for f in os.listdir("main")[:MAX] if f.endswith(".bc")]:
+    job = pool.submit(compile,f"{COUNTER_BLAKE}-3", "blake2b.bc", "equihash.bc", bl, "sha256.bc", "only-main")
+    COUNTER_BLAKE += 1
+    futures.append(job)
+
+wait(futures, return_when=ALL_COMPLETED)
+
+for eq in [f for f in os.listdir("sha256")[:MAX] if f.endswith(".bc")]:
+    job = pool.submit(compile,f"{COUNTER_EQUI}-4", "blake2b.bc", "equihash", "main.bc", eq, "only-sha256")
+    COUNTER_EQUI += 1
+    futures.append(job)
+    
 wait(futures, return_when=ALL_COMPLETED)'''
 
 DICT = {}
