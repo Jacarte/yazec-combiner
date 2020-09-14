@@ -17,26 +17,34 @@ MODULES = ['blake2b', 'equihash', 'main', 'sha256']
 check(["bash", "clean.sh"])
 
 def compile(name, blake, equihash, main, sha256, out):
-    sys.stderr.write(f"{name}, {blake}, {equihash}, {main}, {sha256}\n")
-
     tmp_folder = "tmp-%s"%uuid.uuid4().__str__()
-
-    shutil.copytree("baseline", tmp_folder)
-
-    shutil.copy(f"blake2b/{blake}", f"{tmp_folder}/blake2b.bc")   
-    shutil.copy(f"equihash/{equihash}", f"{tmp_folder}/equihash.bc")
-    shutil.copy(f"main/{main}", f"{tmp_folder}/main.bc")
-    shutil.copy(f"sha256/{sha256}", f"{tmp_folder}/sha256.bc")
+    try:
+        sys.stderr.write(f"{name}, {blake}, {equihash}, {main}, {sha256}\n")
 
 
+        shutil.copytree("baseline", tmp_folder)
+
+        shutil.copy(f"blake2b/{blake}", f"{tmp_folder}/blake2b.bc")   
+        shutil.copy(f"equihash/{equihash}", f"{tmp_folder}/equihash.bc")
+        shutil.copy(f"main/{main}", f"{tmp_folder}/main.bc")
+        shutil.copy(f"sha256/{sha256}", f"{tmp_folder}/sha256.bc")
 
 
-    # create temp folder
-    check(["make"], cwd=tmp_folder)
 
-    # copy the wasm
-    shutil.copy("%s/jazecminer.wasm"%tmp_folder, f"{out}/{name}-jazecminer.wasm")
-    shutil.rmtree(tmp_folder)
+
+        # create temp folder
+        check(["make"], cwd=tmp_folder)
+
+        # copy the wasm
+        shutil.copy("%s/jazecminer.wasm"%tmp_folder, f"{out}/{name}-jazecminer.wasm")
+        shutil.rmtree(tmp_folder)
+    except:
+        print(f"Error {name},{blake}, {equihash}, {sha256}")
+    finally:
+        try:
+            shutil.rmtree(tmp_folder)
+        except:
+            pass
 
 
 futures = []
@@ -67,6 +75,12 @@ if os.path.exists('progress.json'):
 
 MX = max([int(k) for k in DICT.keys()] + [-1])
 
+l1 = len([f for f in os.listdir("blake2b")[:MAX] if f.endswith(".bc") ])
+l2 = len([f for f in os.listdir("equihash")[:MAX] if f.endswith(".bc") ])
+l3 = len([f for f in os.listdir("main")[:MAX] if f.endswith(".bc") ])
+l4 = len([f for f in os.listdir("sha256")[:MAX] if f.endswith(".bc") ])
+print(l1*l2*l3*l4)
+
 try:
     for bl in [f for f in os.listdir("blake2b")[:MAX] if f.endswith(".bc") ]:
         for eq in [f for f in os.listdir("equihash")[:MAX] if f.endswith(".bc") ]:
@@ -77,6 +91,7 @@ try:
                         job = pool.submit(compile,f"{COUNTER}", bl, eq, m, s, "out")
                         futures.append(job)
                         COUNTER += 1
+                        #breakl
                     else:
                         print("Already generated")
 except KeyboardInterrupt:
