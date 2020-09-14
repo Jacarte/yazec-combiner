@@ -4,10 +4,11 @@ from subprocess import check_call as check
 import uuid
 import shutil
 import sys
+import json
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
-WORKERS = 10
-MAX = 5
+WORKERS = 5
+MAX = 105000
 
 pool = ThreadPoolExecutor(max_workers=WORKERS)
 
@@ -46,7 +47,7 @@ COUNTER = 1
 
 
 
-for bl in os.listdir("blake2b")[:MAX]:
+'''for bl in os.listdir("blake2b")[:MAX]:
     job = pool.submit(compile,f"{COUNTER_BLAKE}-1", bl, "equihash.bc", "main.bc", "sha256.bc", "only-blake")
     COUNTER_BLAKE += 1
     futures.append(job)
@@ -57,14 +58,33 @@ for eq in os.listdir("equihash")[:MAX]:
     job = pool.submit(compile,f"{COUNTER_EQUI}-2", "blake2b.bc", eq, "main.bc", "sha256.bc", "only-equihash")
     COUNTER_EQUI += 1
     futures.append(job)
+wait(futures, return_when=ALL_COMPLETED)'''
+
+DICT = {}
+
+if os.path.exists('progress.json'):
+    DICT = json.loads(open("progress.json", 'r').read())
+
+MX = max([int(k) for k in DICT.keys()] + [-1])
+
+try:
+    for bl in [f for f in os.listdir("blake2b")[:MAX] if f.endswith(".bc") ]:
+        for eq in [f for f in os.listdir("equihash")[:MAX] if f.endswith(".bc") ]:
+            for m in [f for f in os.listdir("main")[:MAX] if f.endswith(".bc") ]:
+                for s in [f for f in os.listdir("sha256")[:MAX] if f.endswith(".bc") ]:
+                    if COUNTER > MX:
+                        DICT[COUNTER] = [bl, eq, m, s]
+                        job = pool.submit(compile,f"{COUNTER}", bl, eq, m, s, "out")
+                        futures.append(job)
+                        COUNTER += 1
+                    else:
+                        print("Already generated")
+except KeyboardInterrupt:
+    # save progress
+    open("out/progress.json", 'w').write(json.dumps(DICT))
+
+
 wait(futures, return_when=ALL_COMPLETED)
 
-for bl in os.listdir("blake2b")[:MAX]:
-    for eq in os.listdir("equihash")[:MAX]:
-        for m in os.listdir("main"):
-            for s in os.listdir("sha256"):
-                job = pool.submit(compile,f"{COUNTER}", bl, eq, m, s, "out")
-                futures.append(job)
-                COUNTER += 1
 
-wait(futures, return_when=ALL_COMPLETED)
+# compile("test","[4]blake2b[0_1_5_7].bc", "equihash.bc", "main.bc", "sha256.bc", "out")
