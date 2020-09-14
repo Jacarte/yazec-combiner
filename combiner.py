@@ -7,7 +7,7 @@ import sys
 import json
 from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
-WORKERS = 5
+WORKERS = int(sys.argv[1])
 MAX = 105000
 
 pool = ThreadPoolExecutor(max_workers=WORKERS)
