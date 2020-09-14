@@ -38,8 +38,8 @@ def compile(name, blake, equihash, main, sha256, out):
         # copy the wasm
         shutil.copy("%s/jazecminer.wasm"%tmp_folder, f"{out}/{name}-jazecminer.wasm")
         shutil.rmtree(tmp_folder)
-    except:
-        print(f"Error {name},{blake}, {equihash}, {sha256}")
+    except Exception as e:
+        print(f"Error {e} {name},{blake}, {equihash}, {sha256}")
     finally:
         try:
             shutil.rmtree(tmp_folder)
