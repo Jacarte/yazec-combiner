@@ -45,6 +45,7 @@ def compile(name, blake, equihash, main, sha256, out):
     finally:
         try:
             # shutil.rmtree(tmp_folder)
+            pass
         except:
             pass
 
